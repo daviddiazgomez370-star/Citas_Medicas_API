@@ -1,14 +1,12 @@
-from typing import Literal
-
 from pydantic import BaseModel, EmailStr, field_validator
 
-class UsuarioCreate(BaseModel):
+class MedicoCreate(BaseModel):
     nombre: str
     documento: str
     telefono: str
     email: EmailStr
     password: str
-    rol: Literal["paciente", "medico"]
+    especialidad: str
 
     @field_validator("nombre")
     @classmethod
@@ -30,9 +28,9 @@ class UsuarioCreate(BaseModel):
                 "El documento solo debe contener números"
             )
         
-        if len(value) < 6 or len(value) > 15:
+        if len(value) != 10:
             raise ValueError(
-                "El documento debe tener entre 6 y 15 números"
+                "El documento debe tener 10 números"
             )
         
         return value
@@ -42,15 +40,16 @@ class UsuarioCreate(BaseModel):
     def validar_telefono(cls, value):
         if not value.isdigit():
             raise ValueError(
-                "El telefono solo debe contener números"
+                "El telefono debe contener números"
             )
+        
         if len(value) != 10:
             raise ValueError(
-                "El telefono debe contener 10 números"
+                "El teléfono debe tener 10 números"
             )
-
+        
         return value
-
+    
     @field_validator("password")
     @classmethod
     def validar_password(cls, value):
@@ -58,16 +57,29 @@ class UsuarioCreate(BaseModel):
             raise ValueError(
                 "La contraseña debe tener mínimo 6 caracteres"
             )
-
+        
         return value
+    
+    @field_validator("especialidad")
+    @classmethod
+    def validar_especialidad(cls, value):
+        value = value.strip()
 
-class UsuarioResponse(BaseModel):
+        if len(value) < 3:
+            raise ValueError(
+                "La especialidad es obligatoria"
+            )
+        
+        return value
+    
+class MedicoResponse(BaseModel):
     id: int
+    usuario_id: int
     nombre: str
     documento: str
     telefono: str
     email: EmailStr
-    rol: str
+    especialidad: str
 
     model_config = {
         "from_attributes": True

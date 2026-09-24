@@ -5,3 +5,5 @@ __pycache__/
 *.db
 .idea/
 .vscode/
+citas_medicas.db
+__init__.py
