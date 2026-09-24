@@ -1,8 +1,8 @@
 """Migraciones SQLite pequeñas e idempotentes para instalaciones existentes.
 
 No elimina el archivo de base de datos ni las tablas legacy. Solo copia las
-cuentas de ``usuario`` a ``usuarios`` y corrige la FK de ``medicos`` cuando
-proviene de una versión anterior de la aplicación.
+cuentas de ``usuario`` a ``usuarios``, corrige la FK de ``medicos`` y conserva
+la semántica de los estados de citas de versiones anteriores.
 """
 
 from sqlalchemy.engine import Engine
@@ -121,6 +121,19 @@ def _asegurar_indice_citas(cursor) -> None:
         HAVING COUNT(*) > 1
         """
     )
+
+
+def _normalizar_estados_citas(cursor) -> None:
+    """Conserva citas existentes al renombrar el estado confirmado."""
+    if "citas" not in _table_names(cursor):
+        return
+
+    cursor.execute(
+        "UPDATE citas SET estado = 'confirmada' WHERE estado = 'confirmado'"
+    )
+    cursor.execute(
+        "UPDATE citas SET estado = 'cancelada' WHERE estado = 'cancelado'"
+    )
     if cursor.fetchone() is not None:
         raise LegacySchemaError(
             "La migración se detuvo: existen citas activas duplicadas para "
@@ -148,6 +161,7 @@ def migrar_esquema_legacy(engine: Engine) -> None:
         cursor.execute("PRAGMA foreign_keys = OFF")
         _migrar_usuarios_legacy(cursor)
         _reconstruir_medicos(cursor)
+        _normalizar_estados_citas(cursor)
         _asegurar_indice_citas(cursor)
 
         cursor.execute("PRAGMA foreign_key_check")

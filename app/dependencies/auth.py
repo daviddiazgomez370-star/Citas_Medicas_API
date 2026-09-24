@@ -13,14 +13,20 @@ from app.core.security import ALGORITHM, SECRET_KEY
 from app.database import get_db
 from app.models.usuario import Usuario
 
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 def obtener_usuario_actual(
-        credentials: HTTPAuthorizationCredentials = Depends(
+        credentials: HTTPAuthorizationCredentials | None = Depends(
             bearer_scheme
         ),
         db: Session = Depends(get_db)
 ):
+    if credentials is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No autenticado"
+        )
+
     token = credentials.credentials
 
     try:

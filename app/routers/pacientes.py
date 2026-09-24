@@ -9,10 +9,19 @@ from app.schemas.usuario_schema import UsuarioCreate, UsuarioResponse
 
 router = APIRouter()
 
+RESPUESTAS_PACIENTE = {
+    401: {"description": "No autenticado"},
+    403: {"description": "Sin permisos: se requiere rol paciente"},
+}
+
 @router.post(
     "/",
     response_model=UsuarioResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        400: {"description": "El rol debe ser paciente"},
+        409: {"description": "Correo o documento ya registrado"},
+    }
 )
 def crear_paciente(
     datos: UsuarioCreate,
@@ -59,7 +68,7 @@ def crear_paciente(
 
     return nuevo_usuario
 
-@router.get("/zona-paciente")
+@router.get("/zona-paciente", responses=RESPUESTAS_PACIENTE)
 def zona_paciente(
     usuario: Usuario = Depends(solo_paciente)
 ):

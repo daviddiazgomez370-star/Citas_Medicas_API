@@ -52,6 +52,6 @@ class CitaResponse(BaseModel):
 class EstadoCitaUpdate(BaseModel):
     estado: Literal[
         "pendiente",
-        "confirmado",
-        "cancelado"
+        "confirmada",
+        "cancelada"
     ]

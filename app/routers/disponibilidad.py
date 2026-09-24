@@ -22,6 +22,11 @@ from app.schemas.disponibilidad_schema import (
 
 router = APIRouter()
 
+RESPUESTAS_MEDICO = {
+    401: {"description": "No autenticado"},
+    403: {"description": "Sin permisos: se requiere rol médico"},
+}
+
 def obtener_medico_desde_usuario(
         usuario: Usuario,
         db: Session
@@ -90,7 +95,12 @@ def existen_citas_afectadas(
 @router.post(
     "/",
     response_model=DisponibilidadResponse,
-    status_code=status.HTTP_201_CREATED
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        **RESPUESTAS_MEDICO,
+        404: {"description": "Perfil de médico no encontrado"},
+        409: {"description": "Horario superpuesto o conflicto de reserva"},
+    }
 )
 def crear_disponibilidad(
     datos: DisponibilidadCreate,
@@ -134,7 +144,11 @@ def crear_disponibilidad(
 
 @router.get(
     "/mia",
-    response_model=list[DisponibilidadResponse]
+    response_model=list[DisponibilidadResponse],
+    responses={
+        **RESPUESTAS_MEDICO,
+        404: {"description": "Perfil de médico no encontrado"},
+    }
 )
 def consultar_mi_disponibilidad(
     usuario: Usuario = Depends(solo_medico),
@@ -158,7 +172,11 @@ def consultar_mi_disponibilidad(
 
 @router.get(
     "/medico/{medico_id}",
-    response_model=list[DisponibilidadResponse]
+    response_model=list[DisponibilidadResponse],
+    responses={
+        401: {"description": "No autenticado"},
+        404: {"description": "Médico no encontrado"},
+    }
 )
 def consultar_disponibilidad_medico(
     medico_id: int,
@@ -190,7 +208,12 @@ def consultar_disponibilidad_medico(
 
 @router.put(
     "/{disponibilidad_id}",
-    response_model=DisponibilidadResponse
+    response_model=DisponibilidadResponse,
+    responses={
+        **RESPUESTAS_MEDICO,
+        404: {"description": "Disponibilidad no encontrada"},
+        409: {"description": "Horario superpuesto o citas activas afectadas"},
+    }
 )
 def actualizar_disponibilidad(
     disponibilidad_id: int,
@@ -257,7 +280,12 @@ def actualizar_disponibilidad(
 
 @router.delete(
     "/{disponibilidad_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        **RESPUESTAS_MEDICO,
+        404: {"description": "Disponibilidad no encontrada"},
+        409: {"description": "La disponibilidad tiene citas activas"},
+    }
 )
 def eliminar_disponibilidad(
     disponibilidad_id: int,

@@ -25,6 +25,16 @@ from app.schemas.citas_schema import (
 
 router = APIRouter()
 
+RESPUESTAS_PACIENTE = {
+    401: {"description": "No autenticado"},
+    403: {"description": "Sin permisos: se requiere rol paciente"},
+}
+
+RESPUESTAS_MEDICO = {
+    401: {"description": "No autenticado"},
+    403: {"description": "Sin permisos: se requiere rol médico"},
+}
+
 
 def obtener_medico_desde_usuario(
     usuario: Usuario,
@@ -47,6 +57,7 @@ def obtener_medico_desde_usuario(
     response_model=CitaResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
+        **RESPUESTAS_PACIENTE,
         404: {
             "description": "Médico no encontrado"
         },
@@ -122,7 +133,8 @@ def crear_cita(
 
 @router.get(
     "/mis-citas",
-    response_model=list[CitaResponse]
+    response_model=list[CitaResponse],
+    responses=RESPUESTAS_PACIENTE
 )
 def consultar_mis_citas(
     usuario: Usuario = Depends(solo_paciente),
@@ -137,9 +149,26 @@ def consultar_mis_citas(
 
     return citas
 
+
+@router.get(
+    "/historial",
+    response_model=list[CitaResponse],
+    responses=RESPUESTAS_PACIENTE
+)
+def consultar_historial(
+    usuario: Usuario = Depends(solo_paciente),
+    db: Session = Depends(get_db)
+):
+    """Devuelve únicamente las citas propias, incluidos todos sus estados."""
+    return consultar_mis_citas(usuario, db)
+
 @router.get(
     "/agenda",
-    response_model=list[CitaResponse]
+    response_model=list[CitaResponse],
+    responses={
+        **RESPUESTAS_MEDICO,
+        404: {"description": "Perfil de médico no encontrado"},
+    }
 )
 def consultar_agenda(
     usuario: Usuario = Depends(solo_medico),
@@ -163,8 +192,12 @@ def consultar_agenda(
     "/{cita_id}/estado",
     response_model=CitaResponse,
     responses={
+        **RESPUESTAS_MEDICO,
         404: {
             "description": "Cita no encontrada"
+        },
+        409: {
+            "description": "La cita ya está cancelada"
         }
     }
 )
@@ -207,6 +240,7 @@ def actualizar_estado_cita(
     "/{cita_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     responses={
+        **RESPUESTAS_PACIENTE,
         404: {
             "description": "Cita no encontrada"
         },

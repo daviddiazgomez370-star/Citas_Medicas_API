@@ -10,8 +10,19 @@ from app.schemas.medico_schema import MedicoCreate
 
 router = APIRouter()
 
+RESPUESTAS_MEDICO = {
+    401: {"description": "No autenticado"},
+    403: {"description": "Sin permisos: se requiere rol médico"},
+}
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        409: {"description": "Correo o documento ya registrado"}
+    }
+)
 def crear_medico(datos: MedicoCreate, db: Session = Depends(get_db)):
     usuario_email = db.query(Usuario).filter(Usuario.email == datos.email).first()
 
@@ -84,7 +95,7 @@ def listar_medicos(db: Session = Depends(get_db)):
     return resultado
 
 
-@router.get("/zona-medico")
+@router.get("/zona-medico", responses=RESPUESTAS_MEDICO)
 def zona_medico(usuario: Usuario = Depends(solo_medico)):
     return {
         "mensaje": "Acceso autorizado para médico",

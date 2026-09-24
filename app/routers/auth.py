@@ -20,7 +20,10 @@ router = APIRouter()
 
 @router.post(
     "/login",
-    response_model=TokenResponse
+    response_model=TokenResponse,
+    responses={
+        401: {"description": "Correo o contraseña incorrectos"}
+    }
 )
 def login(
     datos: LoginRequest,
@@ -67,7 +70,10 @@ def login(
 
 @router.get(
     "/me",
-    response_model=UsuarioActualResponse
+    response_model=UsuarioActualResponse,
+    responses={
+        401: {"description": "No autenticado o token inválido"}
+    }
 )
 def mi_perfil(
     usuario: Usuario = Depends(
